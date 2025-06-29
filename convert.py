@@ -27,39 +27,36 @@ def jis_to_sjis(m, k, t):
     if not (1 <= t <= 94):
         raise ValueError(f"Invalid ten number: {t}. Must be between 1 and 94.")
     
-    # Convert JIS coordinates to JIS code
     if m == 1:
-        # JIS X 0208 (first plane)
-        jis_code = 0x2121 + (k - 1) * 94 + (t - 1)
-    else:
-        # JIS X 0212 (second plane) - supplementary characters
-        jis_code = 0x2121 + (k - 1) * 94 + (t - 1)
-    
-    # Extract high and low bytes from JIS code
-    jis_high = (jis_code >> 8) & 0xFF
-    jis_low = jis_code & 0xFF
-    
-    # Convert JIS to Shift JIS
-    if m == 1:
-        # Standard JIS X 0208 conversion
+        # JIS X 0208 (first plane) - Standard JIS to Shift JIS conversion
+        # Convert ku-ten to JIS code point
+        jis_high = k + 0x20  # ku + 0x20
+        jis_low = t + 0x20   # ten + 0x20
+        
+        # Convert JIS to Shift JIS using standard algorithm
         if jis_high % 2 == 1:
+            # Odd ku
             s1 = ((jis_high - 0x21) >> 1) + 0x81
             if s1 > 0x9F:
                 s1 += 0x40
         else:
+            # Even ku  
             s1 = ((jis_high - 0x22) >> 1) + 0x81
             if s1 > 0x9F:
                 s1 += 0x40
         
         if jis_high % 2 == 1:
-            if jis_low <= 0x5F:
+            # Odd ku
+            if jis_low < 0x60:
                 s2 = jis_low + 0x1F
             else:
                 s2 = jis_low + 0x20
         else:
+            # Even ku
             s2 = jis_low + 0x7E
+            
     else:
-        # JIS X 0212 supplementary characters (SJIS2004 extension area)
+        # JIS X 0212 (second plane) - SJIS2004 extension area
         # Map to SJIS2004 extension area (0x8740-0x9FFC, 0xE040-0xFCFC)
         linear_index = (k - 1) * 94 + (t - 1)
         
