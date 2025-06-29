@@ -43,17 +43,12 @@ def main():
                 unsafe_allow_html=True
             )
             
-            # Copy button
+            # Copy functionality using Streamlit's built-in clipboard
             col1, col2, col3 = st.columns([1, 1, 1])
             with col2:
-                if st.button("📋 Copy Character", use_container_width=True, type="primary"):
-                    try:
-                        pyperclip.copy(result)
-                        st.success("Character copied to clipboard!")
-                    except Exception as e:
-                        # Fallback for environments where pyperclip doesn't work
-                        st.info(f"Copy manually: {result}")
-                        st.code(result, language=None)
+                # Use st.code with copy button functionality
+                st.code(result, language=None)
+                st.caption("👆 Click the copy icon in the code box above to copy the character")
             
             # Debug information (expandable)
             if debug_info:

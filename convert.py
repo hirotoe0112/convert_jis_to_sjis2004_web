@@ -93,32 +93,31 @@ def sjis_to_unicode(s1, s2):
     Raises:
         UnicodeDecodeError: If bytes cannot be decoded
     """
+    # Create bytes from the two Shift JIS bytes
+    sjis_bytes = bytes([s1, s2])
+    
+    # Try to decode as Shift JIS (CP932) first
     try:
-        # Create bytes from the two Shift JIS bytes
-        sjis_bytes = bytes([s1, s2])
-        
-        # Try to decode as Shift JIS (CP932) first
+        unicode_char = sjis_bytes.decode('shift_jis')
+        return unicode_char
+    except UnicodeDecodeError:
+        # If standard Shift JIS fails, try CP932 (Microsoft's extension)
         try:
-            unicode_char = sjis_bytes.decode('shift_jis')
+            unicode_char = sjis_bytes.decode('cp932')
             return unicode_char
         except UnicodeDecodeError:
-            # If standard Shift JIS fails, try CP932 (Microsoft's extension)
+            # If both fail, try shift_jis2004
             try:
-                unicode_char = sjis_bytes.decode('cp932')
-                return unicode_char
-            except UnicodeDecodeError:
-                # If both fail, try shift_jis2004
                 unicode_char = sjis_bytes.decode('shift_jis-2004')
                 return unicode_char
-                
-    except (UnicodeDecodeError, LookupError) as e:
-        raise UnicodeDecodeError(
-            'shift_jis', 
-            sjis_bytes, 
-            0, 
-            len(sjis_bytes), 
-            f"Cannot decode Shift JIS bytes {s1:02X} {s2:02X}: {str(e)}"
-        )
+            except (UnicodeDecodeError, LookupError) as e:
+                raise UnicodeDecodeError(
+                    'shift_jis', 
+                    sjis_bytes, 
+                    0, 
+                    len(sjis_bytes), 
+                    f"Cannot decode Shift JIS bytes {s1:02X} {s2:02X}: {str(e)}"
+                )
 
 
 def convert_jis_code(jis_input):
@@ -131,6 +130,8 @@ def convert_jis_code(jis_input):
     Returns:
         tuple: (success, result_or_error, debug_info)
     """
+    debug_info = None
+    
     try:
         # Validate input format
         if not jis_input.isdigit() or len(jis_input) != 5:
@@ -144,12 +145,14 @@ def convert_jis_code(jis_input):
         debug_info = {
             'area': m,
             'ku': k,
-            'ten': t
+            'ten': t,
+            'sjis_bytes': None,
+            'sjis_hex': ""
         }
         
         # Convert JIS to SJIS
         s1, s2 = jis_to_sjis(m, k, t)
-        debug_info['sjis_bytes'] = (s1, s2)
+        debug_info['sjis_bytes'] = f"({s1}, {s2})"
         debug_info['sjis_hex'] = f"{s1:02X} {s2:02X}"
         
         # Convert SJIS to Unicode
@@ -157,9 +160,9 @@ def convert_jis_code(jis_input):
         
         return True, unicode_char, debug_info
         
-    except ValueError as e:
-        return False, f"Conversion error: {str(e)}", debug_info if 'debug_info' in locals() else None
     except UnicodeDecodeError as e:
-        return False, f"Character encoding error: {str(e)}", debug_info if 'debug_info' in locals() else None
+        return False, f"Character encoding error: {str(e)}", debug_info
+    except ValueError as e:
+        return False, f"Conversion error: {str(e)}", debug_info
     except Exception as e:
-        return False, f"Unexpected error: {str(e)}", debug_info if 'debug_info' in locals() else None
+        return False, f"Unexpected error: {str(e)}", debug_info
